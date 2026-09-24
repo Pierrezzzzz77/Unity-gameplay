@@ -1,0 +1,1562 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="color-scheme" content="dark">
+<title>Monta.3D — Simulador 3D de Montagem de Computadores</title>
+<meta name="description" content="Simulador 3D interativo de montagem de computadores, desenvolvido para apresentação na FENECAN.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cg transform='rotate(-30 12 12)'%3E%3Ccircle cx='7.3' cy='3.2' r='1.45'/%3E%3Crect x='5.5' y='4.7' width='3.6' height='14.6' rx='1.8'/%3E%3Crect x='14.9' y='4.7' width='3.6' height='14.6' rx='1.8'/%3E%3Ccircle cx='16.7' cy='20.8' r='1.45'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900&family=Instrument+Serif:ital@1&display=swap">
+<style>
+html, body { background: #000000 !important; color: #ffffff; }
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("inter.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Instrument Serif";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("instrument-serif-italic.woff2") format("woff2");
+}
+
+:root {
+  --bg: #000000;
+  --text: #ffffff;
+  --muted: #9a9a9a;
+  --stat: #d8d8d8;
+  --border: rgba(255, 255, 255, 0.16);
+  --border-soft: rgba(255, 255, 255, 0.12);
+
+  --logo: 15.5px;
+  --logo-mark: 22px;
+  --nav: 14px;
+  --nav-h: 40px;
+  --btn: 13.5px;
+  --btn-h: 40px;
+  --hero-btn-h: 42px;
+  --h1: 48px;
+  --lede: 15.5px;
+  --badge: 12.5px;
+  --stat-size: 13.5px;
+  --header-y: 22px;
+  --header-x: 40px;
+  --stats-x: 72px;
+  --stats-y: 36px;
+  --hero-gap: 85px;
+  --copy-max: 860px;
+  --lede-max: 470px;
+
+  /* site sections (derived from hero identity) */
+  --section-x: var(--stats-x);
+  --section-y: 140px;
+  --h2: 40px;
+  --card-radius: 14px;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --font-ui: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-serif: "Instrument Serif", "Times New Roman", Times, serif;
+}
+
+html, body {
+  background: #000000;
+  background: var(--bg, #000000);
+  color: #ffffff;
+  color: var(--text, #ffffff);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+  position: relative;
+}
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; }
+::selection { background: rgba(186, 208, 255, 0.28); color: #fff; }
+
+/* ---------- Grain ---------- */
+.grain {
+  position: fixed;
+  inset: -50%;
+  z-index: 100;
+  pointer-events: none;
+  opacity: 0.07;
+  width: 200%;
+  height: 200%;
+  animation: grain 8s steps(8) infinite;
+}
+.grain svg { width: 100%; height: 100%; display: block; }
+@keyframes grain {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-3%, 2%); }
+  50% { transform: translate(2%, -3%); }
+  75% { transform: translate(-2%, -1%); }
+}
+
+/* ---------- Scroll progress ---------- */
+.progress {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  z-index: 90;
+  transform-origin: 0 50%;
+  transform: scaleX(0);
+  background: linear-gradient(90deg, #4a4a4a, #ffffff 60%, #bad0ff);
+  box-shadow: 0 0 12px rgba(186, 208, 255, 0.45);
+  pointer-events: none;
+}
+
+/* ---------- Hero stage ---------- */
+.hero-stage { position: relative; z-index: 2; }
+
+.hero-photo {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background: #000;
+  animation: in-photo 1.6s var(--ease) 0s both;
+}
+.hero-photo video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  opacity: 1;
+}
+.hero-photo::after { content: none; }
+@keyframes in-photo {
+  from { opacity: 0; transform: scale(1.06); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.page {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* Scroll-driven hand-off: hero softly recedes as the next section arrives */
+@supports (animation-timeline: scroll()) {
+  .hero-photo video {
+    animation: hero-recede linear both;
+    animation-timeline: scroll(root);
+    animation-range: 0 100vh;
+  }
+  .hero-copy-wrap {
+    animation: copy-recede linear both;
+    animation-timeline: scroll(root);
+    animation-range: 0 80vh;
+  }
+  @keyframes hero-recede {
+    to { transform: scale(1.08) translateY(6%); opacity: 0.25; filter: blur(2px); }
+  }
+  @keyframes copy-recede {
+    to { transform: translateY(-60px); opacity: 0; }
+  }
+}
+
+/* ---------- Header ---------- */
+.menu-backdrop { display: none; }
+
+.header {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: var(--header-y) var(--header-x) 10px;
+  z-index: 50;
+  position: relative;
+}
+
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  justify-self: start;
+  font-size: var(--logo);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  color: #fff;
+}
+.logo svg { width: var(--logo-mark); height: var(--logo-mark); flex: none; }
+.logo-suffix { font-weight: 400; }
+
+#site-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-self: center;
+}
+#site-nav a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--nav-h);
+  padding: 0 18px;
+  border-radius: 7px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid rgba(198, 198, 198, 0.55);
+  background: linear-gradient(105deg, #050505 0%, #2a2a2a 48%, #4a4a4a 100%);
+  color: #f3f3f3;
+  font-size: var(--nav);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  transition: background 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
+}
+#site-nav a::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.16) 50%, transparent 70%);
+  transform: translateX(-120%);
+  transition: transform 0.6s ease;
+  pointer-events: none;
+}
+#site-nav a:hover {
+  border-color: rgba(235, 235, 235, 0.9);
+  background: linear-gradient(105deg, #111 0%, #3a3a3a 45%, #6a6a6a 100%);
+  box-shadow: 0 0 18px rgba(200, 210, 230, 0.18);
+}
+#site-nav a:hover::before { transform: translateX(120%); }
+
+.header-right {
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.burger {
+  display: none;
+  width: 42px;
+  height: 42px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: rgba(8, 8, 8, 0.55);
+  z-index: 60;
+  position: relative;
+  cursor: pointer;
+  place-content: center;
+  gap: 5px;
+  transition: border-color 0.25s ease, background 0.25s ease;
+}
+.burger span {
+  display: block;
+  width: 16px;
+  height: 1.5px;
+  border-radius: 1px;
+  background: #fff;
+  transition: transform 0.25s ease, opacity 0.2s ease;
+}
+.burger:hover { border-color: rgba(255, 255, 255, 0.32); background: rgba(255, 255, 255, 0.05); }
+body.menu-open .burger span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
+body.menu-open .burger span:nth-child(2) { opacity: 0; }
+body.menu-open .burger span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
+
+/* ---------- Buttons ---------- */
+.btn {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--btn-h);
+  padding: 0 16px;
+  border-radius: 6px;
+  font-size: var(--btn);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease, color 0.35s ease, filter 0.35s ease;
+}
+.btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(115deg, transparent 20%, rgba(255, 255, 255, 0.45) 48%, transparent 76%);
+  transform: translateX(-130%);
+  transition: transform 0.65s ease;
+  pointer-events: none;
+}
+.btn:hover::after { transform: translateX(130%); }
+
+.btn-solid {
+  background: linear-gradient(180deg, #ffffff 0%, #e7e7e7 48%, #cfcfcf 100%);
+  color: #111;
+  border: 1px solid #fff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+.btn-solid:hover {
+  background: linear-gradient(180deg, #fff 0%, #f3f6ff 42%, #d5def2 100%);
+  border-color: #f2f6ff;
+  box-shadow: inset 0 1px 0 #fff, 0 0 22px rgba(186, 208, 255, 0.35), 0 8px 18px rgba(255, 255, 255, 0.12);
+}
+
+.btn-ghost {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.45) 50%, rgba(160, 175, 200, 0.08));
+  color: #fff;
+  border: 1px solid rgba(198, 198, 198, 0.45);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+.btn-ghost:hover {
+  background: linear-gradient(135deg, rgba(210, 225, 255, 0.18), rgba(0, 0, 0, 0.35) 48%, rgba(180, 195, 220, 0.16));
+  border-color: rgba(220, 230, 255, 0.75);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 0 20px rgba(170, 200, 255, 0.22);
+}
+
+.hero-actions .btn,
+.cta-actions .btn { height: var(--hero-btn-h); padding: 0 18px; }
+.hero-actions .btn-solid:hover,
+.cta-actions .btn-solid:hover {
+  box-shadow: inset 0 1px 0 #fff, 0 0 26px rgba(186, 208, 255, 0.4), 0 8px 18px rgba(255, 255, 255, 0.14);
+}
+.hero-actions .btn-ghost,
+.cta-actions .btn-ghost {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(0, 0, 0, 0.5) 46%, rgba(150, 170, 200, 0.1));
+  border: 1px solid rgba(198, 198, 198, 0.55);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+.hero-actions .btn-ghost:hover,
+.cta-actions .btn-ghost:hover {
+  border-color: rgba(220, 230, 255, 0.8);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 0 24px rgba(170, 200, 255, 0.28);
+}
+
+/* ---------- Hero ---------- */
+.hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 8px 24px var(--hero-gap);
+  min-height: 0;
+}
+.hero-copy-wrap { width: 100%; display: flex; justify-content: center; }
+.hero-copy {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: var(--copy-max);
+  width: 100%;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 22px;
+  padding: 9px 15px;
+  border: 0;
+  border-radius: 5px;
+  background: linear-gradient(90deg, #7d7d7d 0%, #2a2a2a 52%, #0a0a0a 100%);
+  color: #f2f2f2;
+  font-size: var(--badge);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+.badge-star {
+  width: 18px;
+  height: 20px;
+  flex: none;
+  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.45));
+  animation: in-star 0.9s var(--ease) 0.28s both;
+}
+
+.hero h1 {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: var(--h1);
+  font-weight: 500;
+  letter-spacing: -0.045em;
+  line-height: 1.12;
+  color: #fff;
+}
+.headline-line {
+  display: block;
+  overflow: hidden;
+  padding: 0.06em 0.15em 0.14em;
+}
+.headline-line > span { display: block; }
+h1 em, h2 em {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 1.08em;
+  letter-spacing: -0.03em;
+  color: #9a9a9a;
+}
+.hero h1 em { animation: in-em 1.2s var(--ease) 0.72s both; }
+
+.lede {
+  max-width: var(--lede-max);
+  margin-top: 18px;
+  color: #9a9a9a;
+  font-size: var(--lede);
+  font-weight: 400;
+  line-height: 1.55;
+  letter-spacing: -0.015em;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 26px;
+}
+
+/* ---------- Stats ---------- */
+.stats {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 0 var(--stats-x) var(--stats-y);
+  padding-bottom: max(var(--stats-y), env(safe-area-inset-bottom));
+  color: #d8d8d8;
+}
+.stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  font-size: var(--stat-size);
+  letter-spacing: -0.015em;
+  white-space: nowrap;
+}
+.stat-icon { width: 20px; height: 20px; flex: none; color: #e8e8e8; }
+.stat-icon-wide { width: 38px; height: 21px; flex: none; }
+
+/* ---------- Entrance motion ---------- */
+.appear {
+  opacity: 1;
+  animation-duration: 1.05s;
+  animation-fill-mode: both;
+  animation-timing-function: var(--ease);
+  animation-delay: var(--d, 0.08s);
+}
+.appear--scale { animation-name: in-scale; }
+.appear--soft { animation-name: in-soft; }
+.appear--mask { animation-name: in-mask; }
+.appear--pop { animation-name: in-pop; }
+.appear--btn { animation-name: in-btn; }
+.appear--side { animation-name: in-side; }
+.appear--stat { animation-name: in-stat; }
+.appear.is-in,
+.hero-photo.is-in {
+  animation: none;
+  opacity: 1;
+  transform: none;
+  clip-path: none;
+  filter: none;
+}
+
+@keyframes in-scale { from { opacity: 0; transform: scale(0.84); } to { opacity: 1; transform: scale(1); } }
+@keyframes in-soft { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes in-mask { from { opacity: 0; transform: translateY(40%); } to { opacity: 1; transform: translateY(0); } }
+@keyframes in-pop {
+  0% { opacity: 0; transform: scale(0.9); }
+  70% { opacity: 1; transform: scale(1.03); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes in-btn { from { opacity: 0; transform: translateY(18px) scale(0.94); } to { opacity: 1; transform: none; } }
+@keyframes in-side { from { opacity: 0; transform: translateX(22px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes in-stat { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes in-star {
+  0% { opacity: 0; transform: scale(0.2) rotate(-50deg); }
+  65% { opacity: 1; transform: scale(1.2) rotate(8deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+@keyframes in-em {
+  from { opacity: 0.35; filter: blur(4px); }
+  to { opacity: 1; filter: blur(0); }
+}
+
+/* =========================================================
+   Continuous site — same identity as the hero
+   ========================================================= */
+.section {
+  position: relative;
+  z-index: 1;
+  overflow-x: clip;
+  padding: var(--section-y) var(--section-x);
+}
+.section-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 760px;
+  margin: 0 auto 64px;
+}
+.section-head .badge { margin-bottom: 20px; }
+.section h2 {
+  font-size: var(--h2);
+  font-weight: 500;
+  letter-spacing: -0.045em;
+  line-height: 1.1;
+}
+.section-head p {
+  margin-top: 16px;
+  max-width: 520px;
+  color: var(--muted);
+  font-size: var(--lede);
+  line-height: 1.55;
+  letter-spacing: -0.015em;
+}
+
+/* Ambient glow that drifts between sections (keeps the scroll feeling continuous) */
+.glow {
+  position: absolute;
+  pointer-events: none;
+  width: 60vmax;
+  height: 60vmax;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(170, 195, 255, 0.10), transparent 70%);
+  filter: blur(20px);
+  z-index: -1;
+  animation: drift 18s ease-in-out infinite alternate;
+}
+@keyframes drift {
+  from { transform: translate(-10%, -5%) scale(1); }
+  to { transform: translate(10%, 8%) scale(1.15); }
+}
+
+/* Scroll reveal (only hides when JS is active so content is never lost) */
+.js .reveal {
+  opacity: 0;
+  transform: translateY(36px);
+  filter: blur(8px);
+  transition:
+    opacity 1s var(--ease) calc(var(--i, 0) * 90ms),
+    transform 1.1s var(--ease) calc(var(--i, 0) * 90ms),
+    filter 1s var(--ease) calc(var(--i, 0) * 90ms);
+}
+.js .reveal--scale { transform: scale(0.92); }
+.js .reveal--left { transform: translateX(-40px); }
+.js .reveal--right { transform: translateX(40px); }
+.js .reveal.is-visible { opacity: 1; transform: none; filter: none; }
+
+/* Masked text reveal for section titles */
+.js .reveal-mask { overflow: hidden; padding: 0.06em 0.15em 0.14em; }
+.js .reveal-mask > span {
+  display: block;
+  transform: translateY(105%);
+  transition: transform 1.1s var(--ease) calc(var(--i, 0) * 110ms);
+}
+.js .reveal-mask.is-visible > span { transform: none; }
+
+/* ---------- Marquee ---------- */
+.marquee {
+  position: relative;
+  z-index: 1;
+  padding: 56px 0 8px;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+.marquee-track {
+  display: flex;
+  width: max-content;
+  gap: 12px;
+  animation: marquee 38s linear infinite;
+}
+.marquee:hover .marquee-track { animation-play-state: paused; }
+.marquee-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+  padding: 0 18px;
+  border-radius: 7px;
+  border: 1px solid var(--border-soft);
+  background: linear-gradient(105deg, #050505 0%, #161616 60%, #232323 100%);
+  color: #d8d8d8;
+  font-size: 14px;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+.marquee-item i {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 10px rgba(186, 208, 255, 0.8);
+}
+.marquee-item em { font-family: var(--font-serif); font-size: 1.15em; color: var(--muted); }
+@keyframes marquee { to { transform: translateX(-50%); } }
+
+/* ---------- Benefits: rotating liquid-metal border ---------- */
+@property --angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+.benefits-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+.card {
+  position: relative;
+  border-radius: var(--card-radius);
+  padding: 28px 24px 30px;
+  background: linear-gradient(160deg, #0d0d0d 0%, #050505 100%);
+  isolation: isolate;
+  min-height: 240px;
+  display: flex;
+  flex-direction: column;
+}
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(from var(--angle), rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.55) 10%, rgba(186, 208, 255, 0.18) 22%, rgba(255, 255, 255, 0.08) 40%, rgba(255, 255, 255, 0.08));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  animation: spin-border 6s linear infinite;
+  animation-delay: calc(var(--i, 0) * -1.5s);
+  z-index: -1;
+}
+.card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(400px circle at var(--mx, 50%) var(--my, 0%), rgba(186, 208, 255, 0.08), transparent 45%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  z-index: -1;
+}
+.card:hover::after { opacity: 1; }
+@keyframes spin-border { to { --angle: 360deg; } }
+.card-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(198, 198, 198, 0.4);
+  background: linear-gradient(105deg, #050505 0%, #2a2a2a 48%, #4a4a4a 100%);
+  margin-bottom: auto;
+}
+.card-icon svg { width: 22px; height: 22px; }
+.card h3 {
+  margin-top: 36px;
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+}
+.card p {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 14.5px;
+  line-height: 1.55;
+  letter-spacing: -0.01em;
+}
+
+/* ---------- How it works: sticky stacking cards ---------- */
+.steps {
+  max-width: 1080px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+.step {
+  position: sticky;
+  top: calc(12vh + var(--i, 0) * 22px);
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 32px;
+  align-items: center;
+  min-height: 380px;
+  padding: 40px;
+  border-radius: 18px;
+  border: 1px solid var(--border-soft);
+  background:
+    radial-gradient(120% 140% at 100% 0%, rgba(186, 208, 255, 0.06), transparent 50%),
+    linear-gradient(160deg, #101010 0%, #060606 100%);
+  box-shadow: 0 -20px 60px rgba(0, 0, 0, 0.7);
+  transform-origin: 50% 0;
+}
+@supports (animation-timeline: view()) {
+  .step {
+    animation: step-shrink linear both;
+    animation-timeline: view();
+    animation-range: exit-crossing 0% exit-crossing 100%;
+  }
+  @keyframes step-shrink {
+    to { transform: scale(0.94); filter: brightness(0.55); }
+  }
+}
+.step-num {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 64px;
+  line-height: 1;
+  color: #4a4a4a;
+}
+.step h3 {
+  margin-top: 18px;
+  font-size: 28px;
+  font-weight: 500;
+  letter-spacing: -0.04em;
+  line-height: 1.15;
+}
+.step p {
+  margin-top: 12px;
+  max-width: 420px;
+  color: var(--muted);
+  font-size: 15.5px;
+  line-height: 1.6;
+  letter-spacing: -0.015em;
+}
+.step-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
+.tag {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 11px;
+  border-radius: 5px;
+  font-size: 12.5px;
+  color: #d8d8d8;
+  border: 1px solid var(--border-soft);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* Mini 3D-ish scene: a part sliding into its slot */
+.scene {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border-radius: 14px;
+  border: 1px solid var(--border-soft);
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    #050505;
+  overflow: hidden;
+  perspective: 900px;
+}
+.board {
+  position: absolute;
+  inset: 14% 12%;
+  border-radius: 10px;
+  border: 1px solid rgba(198, 198, 198, 0.35);
+  background: linear-gradient(135deg, #1a1a1a, #0b0b0b);
+  transform: rotateX(38deg) rotateZ(-18deg);
+  transform-style: preserve-3d;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8);
+}
+.slot {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  width: var(--w);
+  height: var(--h);
+  border-radius: 4px;
+  border: 1px dashed rgba(186, 208, 255, 0.45);
+  background: rgba(186, 208, 255, 0.05);
+}
+.part {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  width: var(--w);
+  height: var(--h);
+  border-radius: 4px;
+  background: linear-gradient(180deg, #ffffff 0%, #e7e7e7 48%, #cfcfcf 100%);
+  box-shadow: 0 0 0 rgba(186, 208, 255, 0);
+  transform: translateZ(1px);
+  opacity: 1;
+  transition: transform 1.2s var(--ease) 0.25s, opacity 0.6s ease 0.25s, box-shadow 0.6s ease 1.2s;
+}
+.part--dark { background: linear-gradient(180deg, #5a5a5a, #2a2a2a); border: 1px solid rgba(255, 255, 255, 0.4); }
+.js .step:not(.is-visible) .part {
+  transform: translateZ(90px) translateY(-30px);
+  opacity: 0;
+}
+.step.is-visible .part { box-shadow: 0 0 22px rgba(186, 208, 255, 0.55); }
+.step.is-visible .part + .part { transition-delay: 0.45s, 0.45s, 1.4s; }
+.led {
+  position: absolute;
+  right: 8%;
+  bottom: 10%;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #2a2a2a;
+  transition: background 0.4s ease 1.6s, box-shadow 0.4s ease 1.6s;
+}
+.step.is-visible .led { background: #9dffb0; box-shadow: 0 0 14px #9dffb0; animation: blink 1.6s ease-in-out 2s infinite; }
+@keyframes blink { 50% { opacity: 0.35; } }
+
+/* ---------- Components grid ---------- */
+.parts-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+.part-card {
+  position: relative;
+  padding: 22px;
+  border-radius: 12px;
+  border: 1px solid var(--border-soft);
+  background: linear-gradient(160deg, #0c0c0c, #040404);
+  overflow: hidden;
+  transition: border-color 0.35s ease, transform 0.5s var(--ease), box-shadow 0.35s ease;
+}
+.part-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.07) 50%, transparent 70%);
+  transform: translateX(-120%);
+  transition: transform 0.8s ease;
+  pointer-events: none;
+}
+.part-card:hover {
+  border-color: rgba(220, 230, 255, 0.45);
+  transform: translateY(-4px);
+  box-shadow: 0 0 24px rgba(170, 200, 255, 0.12);
+}
+.part-card:hover::before { transform: translateX(120%); }
+.part-card svg { width: 30px; height: 30px; color: #e8e8e8; }
+.part-card h3 { margin-top: 26px; font-size: 16px; font-weight: 500; letter-spacing: -0.02em; }
+.part-card p { margin-top: 6px; color: var(--muted); font-size: 13.5px; line-height: 1.5; }
+
+/* ---------- FAQ ---------- */
+.faq-list {
+  max-width: 760px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.faq {
+  border-radius: 10px;
+  border: 1px solid var(--border-soft);
+  background: linear-gradient(160deg, #0c0c0c, #050505);
+  transition: border-color 0.35s ease, box-shadow 0.35s ease;
+  interpolate-size: allow-keywords;
+}
+.faq[open] { border-color: rgba(220, 230, 255, 0.35); box-shadow: 0 0 22px rgba(170, 200, 255, 0.08); }
+.faq summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 22px;
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary .plus {
+  position: relative;
+  width: 14px; height: 14px;
+  flex: none;
+  transition: transform 0.35s var(--ease);
+}
+.faq summary .plus::before,
+.faq summary .plus::after {
+  content: "";
+  position: absolute;
+  left: 0; top: 6.25px;
+  width: 14px; height: 1.5px;
+  background: #fff;
+  border-radius: 1px;
+}
+.faq summary .plus::after { transform: rotate(90deg); transition: transform 0.35s var(--ease); }
+.faq[open] summary .plus { transform: rotate(180deg); }
+.faq[open] summary .plus::after { transform: rotate(0deg); }
+.faq::details-content {
+  height: 0;
+  overflow: clip;
+  transition: height 0.45s var(--ease), content-visibility 0.45s allow-discrete;
+}
+.faq[open]::details-content { height: auto; }
+.faq p {
+  padding: 0 22px 20px;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.6;
+  letter-spacing: -0.01em;
+}
+
+/* ---------- Final CTA ---------- */
+.cta {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-bottom: calc(var(--section-y) * 0.8);
+}
+.cta h2 { font-size: calc(var(--h1) * 1.1); }
+.shimmer {
+  background: linear-gradient(100deg, #6a6a6a 20%, #ffffff 40%, #bad0ff 50%, #ffffff 60%, #6a6a6a 80%);
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 5s linear infinite;
+}
+@keyframes shimmer { from { background-position: 100% 0; } to { background-position: -150% 0; } }
+.cta .lede { margin-top: 18px; }
+.cta-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 30px; }
+
+.site-footer {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 28px var(--stats-x);
+  padding-bottom: max(28px, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--border-soft);
+  color: var(--muted);
+  font-size: 13px;
+  letter-spacing: -0.01em;
+}
+
+/* ---------- Responsive ---------- */
+@media (min-width: 1600px) {
+  :root {
+    --logo: 17px; --logo-mark: 24px; --nav: 15px; --nav-h: 44px; --btn: 15px; --btn-h: 44px;
+    --hero-btn-h: 48px; --h1: 64px; --lede: 18px; --badge: 13.5px; --stat-size: 15px;
+    --header-y: 28px; --header-x: 64px; --stats-x: 96px; --stats-y: 44px;
+    --copy-max: 980px; --lede-max: 540px; --h2: 52px; --section-y: 170px;
+  }
+  #site-nav a { padding: 0 20px; }
+  .badge { margin-bottom: 26px; }
+  .lede { margin-top: 22px; }
+  .hero-actions { margin-top: 30px; gap: 12px; }
+  .stat-icon { width: 22px; height: 22px; }
+  .stat-icon-wide { width: 45px; height: 24px; }
+}
+@media (min-width: 1920px) {
+  :root {
+    --logo: 18px; --logo-mark: 26px; --nav: 16px; --nav-h: 48px; --btn: 16px; --btn-h: 48px;
+    --hero-btn-h: 52px; --h1: 76px; --lede: 20px; --badge: 14.5px; --stat-size: 16px;
+    --header-y: 32px; --header-x: 80px; --stats-x: 120px; --stats-y: 52px;
+    --copy-max: 1120px; --lede-max: 620px; --h2: 60px;
+  }
+  #site-nav { gap: 10px; }
+  #site-nav a { padding: 0 22px; }
+  .btn, .hero-actions .btn, .cta-actions .btn { padding: 0 22px; }
+  .badge { padding: 10px 15px; }
+  .stat-icon-wide { width: 48px; height: 26px; }
+}
+@media (min-width: 2560px) {
+  :root { --h1: 88px; --lede: 22px; --header-x: 120px; --stats-x: 160px; --copy-max: 1280px; --lede-max: 680px; --h2: 70px; }
+}
+@media (min-width: 1280px) and (max-width: 1599px) {
+  :root { --h1: 54px; --lede: 16px; --header-x: 48px; --stats-x: 80px; --copy-max: 900px; --h2: 44px; }
+}
+@media (min-width: 901px) and (max-width: 1279px) {
+  :root {
+    --logo: 15px; --nav: 13px; --nav-h: 36px; --btn: 13px; --btn-h: 38px; --hero-btn-h: 40px;
+    --h1: 42px; --lede: 15px; --badge: 12px; --stat-size: 12.5px;
+    --header-y: 16px; --header-x: 28px; --stats-x: 36px; --stats-y: 28px;
+    --hero-gap: 64px; --copy-max: 760px; --lede-max: 440px; --h2: 36px; --section-y: 120px;
+  }
+  #site-nav a { padding: 0 14px; }
+  .badge { margin-bottom: 16px; }
+  .lede { margin-top: 14px; }
+  .hero-actions { margin-top: 20px; }
+  .benefits-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .parts-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 901px) and (max-height: 850px) {
+  :root { --header-y: 14px; --stats-y: 24px; --hero-gap: 48px; --h1: 40px; }
+  .hero .badge { margin-bottom: 12px; }
+  .hero .lede { margin-top: 12px; }
+  .hero-actions { margin-top: 16px; }
+}
+@media (min-width: 901px) and (max-height: 720px) {
+  :root { --h1: 34px; --lede: 14px; --hero-gap: 32px; --stats-y: 18px; --nav-h: 30px; --btn-h: 34px; --hero-btn-h: 36px; }
+  .hero .badge { margin-bottom: 8px; }
+}
+
+/* Desktop: the hero is locked to exactly one frame; the rest of the site continues below */
+@media (min-width: 901px) {
+  .hero-stage .page {
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+  }
+}
+
+@media (max-width: 900px) {
+  :root {
+    --logo: 16px; --btn: 15px; --btn-h: 46px; --hero-btn-h: 48px; --h1: 36px; --lede: 16.5px;
+    --badge: 13.5px; --stat-size: 15px; --header-y: 16px; --header-x: 18px;
+    --stats-x: 20px; --stats-y: 28px; --hero-gap: 36px; --h2: 32px; --section-y: 96px;
+    --section-x: 20px;
+  }
+  html, body { height: auto; overflow-y: auto; }
+
+  .header {
+    grid-template-columns: 1fr auto auto;
+    gap: 8px;
+    padding-top: max(var(--header-y), env(safe-area-inset-top));
+    padding-left: max(var(--header-x), env(safe-area-inset-left));
+    padding-right: max(var(--header-x), env(safe-area-inset-right));
+  }
+  .logo, .header-right, .burger { z-index: 80; position: relative; }
+  .burger { display: grid; }
+  .header-cta { height: 42px; font-size: 14px; }
+
+  .menu-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    background: rgba(8, 8, 8, 0.42);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.28s ease, visibility 0.28s ease, backdrop-filter 0.28s ease;
+  }
+  body.menu-open .menu-backdrop {
+    opacity: 1;
+    visibility: visible;
+    -webkit-backdrop-filter: blur(24px);
+    backdrop-filter: blur(24px);
+  }
+  body.menu-open { overflow: hidden; }
+
+  #site-nav {
+    position: fixed;
+    inset: 0;
+    z-index: 45;
+    flex-direction: column;
+    justify-content: center;
+    align-items: stretch;
+    gap: 12px;
+    background: transparent;
+    padding: 96px 22px 32px;
+    padding-top: max(96px, calc(env(safe-area-inset-top) + 88px));
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px);
+    transition: opacity 0.28s ease, visibility 0.28s ease, transform 0.28s ease;
+  }
+  body.menu-open #site-nav { opacity: 1; visibility: visible; transform: none; }
+  #site-nav a { width: 100%; height: 56px; font-size: 19px; border-radius: 10px; }
+
+  .hero { padding: 20px 20px 64px; align-items: flex-end; }
+  .hero-copy, .lede { max-width: 100%; }
+  .stats { flex-direction: column; justify-content: center; gap: 16px; }
+  .stat { white-space: normal; }
+
+  .benefits-grid, .parts-grid { grid-template-columns: 1fr; }
+  .parts-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .step { grid-template-columns: 1fr; padding: 26px; min-height: 0; top: calc(10vh + var(--i, 0) * 14px); }
+  .step h3 { font-size: 23px; }
+  .step-num { font-size: 48px; }
+  .section-head { margin-bottom: 44px; }
+  .site-footer { flex-direction: column; text-align: center; }
+}
+@media (max-width: 560px) {
+  :root { --h1: 34px; --lede: 16px; --header-x: 16px; }
+  .hero-actions, .cta-actions { flex-direction: column; width: 100%; }
+  .hero-actions .btn, .cta-actions .btn { width: 100%; }
+  .header-cta { display: none; }
+  .parts-grid { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+  .appear, .hero-photo, .hero h1 em, .badge-star {
+    opacity: 1; transform: none; clip-path: none; filter: none;
+  }
+  .js .reveal, .js .reveal-mask > span, .part { opacity: 1; transform: none; filter: none; }
+}
+</style>
+</head>
+<body style="background:#000;color:#fff">
+
+<div class="grain" aria-hidden="true">
+  <svg xmlns="http://www.w3.org/2000/svg">
+    <filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter>
+    <rect width="100%" height="100%" filter="url(#noise)"/>
+  </svg>
+</div>
+<div class="progress" aria-hidden="true"></div>
+
+<div class="hero-stage">
+  <div class="hero-photo" aria-hidden="true">
+    <video autoplay muted loop playsinline preload="auto"
+      src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260818_072341_50851634-bbc3-4c33-9acc-7647d4db44aa.mp4"></video>
+  </div>
+
+  <div class="page">
+    <div class="menu-backdrop" aria-hidden="true"></div>
+
+    <header class="header">
+      <a class="logo appear appear--scale" href="#top" aria-label="Monta.3D" style="--d:0.08s">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <g transform="rotate(-30 12 12)">
+            <circle cx="7.3" cy="3.2" r="1.45"/>
+            <rect x="5.5" y="4.7" width="3.6" height="14.6" rx="1.8"/>
+            <rect x="14.9" y="4.7" width="3.6" height="14.6" rx="1.8"/>
+            <circle cx="16.7" cy="20.8" r="1.45"/>
+          </g>
+        </svg>
+        <span>Monta<span class="logo-suffix">.3D</span></span>
+      </a>
+
+      <nav id="site-nav" aria-label="Principal">
+        <a class="appear appear--scale" href="#benefits" style="--d:0.16s">Benefícios</a>
+        <a class="appear appear--soft" href="#how-it-works" style="--d:0.28s">Como funciona</a>
+        <a class="appear appear--scale" href="#pecas" style="--d:0.40s">Peças</a>
+        <a class="appear appear--soft" href="#faqs" style="--d:0.52s">FAQ</a>
+      </nav>
+
+      <div class="header-right">
+        <a class="btn btn-solid header-cta appear appear--scale" href="#start" style="--d:0.34s">Experimentar</a>
+        <button class="burger appear appear--scale" type="button" aria-controls="site-nav" aria-expanded="false" aria-label="Abrir menu" style="--d:0.34s">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </header>
+
+    <main class="hero" id="top">
+      <div class="hero-copy-wrap">
+        <div class="hero-copy">
+          <span class="badge appear appear--pop" style="--d:0.22s">
+            <svg class="badge-star" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M12 2.6C12.55 2.6 12.88 3.15 13.08 4.7c.62 4.7 1.52 5.6 6.22 6.22 1.55.2 2.1.53 2.1 1.08s-.55.88-2.1 1.08c-4.7.62-5.6 1.52-6.22 6.22-.2 1.55-.53 2.1-1.08 2.1s-.88-.55-1.08-2.1c-.62-4.7-1.52-5.6-6.22-6.22C3.15 12.88 2.6 12.55 2.6 12s.55-.88 2.1-1.08c4.7-.62 5.6-1.52 6.22-6.22C11.12 3.15 11.45 2.6 12 2.6Z"/></svg>
+            Simulador 3D interativo · FENECAN
+          </span>
+
+          <h1>
+            <span class="headline-line"><span class="appear appear--mask" style="--d:0.42s">Monte seu <em>computador</em> em</span></span>
+            <span class="headline-line"><span class="appear appear--mask" style="--d:0.62s">3D, peça por peça.</span></span>
+          </h1>
+
+          <p class="lede appear appear--soft" style="--d:0.82s; animation-duration:1.25s">
+            Encaixe processador, memória, placa de vídeo e fonte em um simulador interativo e veja o seu PC ganhar vida em tempo real.
+          </p>
+
+          <div class="hero-actions">
+            <a class="btn btn-solid appear appear--btn" href="#start" style="--d:0.96s">Começar a montar</a>
+            <a class="btn btn-ghost appear appear--side" href="#how-it-works" style="--d:1.10s">Ver como funciona</a>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="stats">
+      <div class="stat appear appear--stat" style="--d:1.12s">
+        <svg class="stat-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <defs>
+            <linearGradient id="pillA" x1="3" y1="2" x2="14" y2="22" gradientUnits="userSpaceOnUse">
+              <stop offset="0" stop-color="#ffffff" stop-opacity="0.38"/><stop offset="1" stop-color="#3a3a3a" stop-opacity="0.62"/>
+            </linearGradient>
+            <linearGradient id="pillB" x1="3" y1="2" x2="14" y2="22" gradientUnits="userSpaceOnUse">
+              <stop offset="0" stop-color="#3a3a3a" stop-opacity="0.38"/><stop offset="1" stop-color="#ffffff" stop-opacity="0.62"/>
+            </linearGradient>
+          </defs>
+          <rect x="3.4" y="2.6" width="7.2" height="18.8" rx="3.6" fill="url(#pillA)"/>
+          <rect x="13.4" y="2.6" width="7.2" height="18.8" rx="3.6" fill="url(#pillB)"/>
+          <rect x="9.2" y="10.9" width="5.6" height="2.2" rx="1.1" fill="#4a4a4a"/>
+        </svg>
+        <span>Montagem guiada em 3D</span>
+      </div>
+
+      <div class="stat appear appear--stat" style="--d:1.28s">
+        <svg class="stat-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="2.4" y="2.4" width="19.2" height="19.2" rx="6.2" fill="#ffffff"/>
+          <path d="M12 7.1v7.4" stroke="#111" stroke-width="1.85" stroke-linecap="round" fill="none"/>
+          <path d="M8.15 12.35L12 16.2l3.85-3.85" stroke="#111" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+        <span>Compatibilidade verificada em tempo real</span>
+      </div>
+
+      <div class="stat appear appear--stat" style="--d:1.44s">
+        <svg class="stat-icon-wide" viewBox="0 0 40 22" aria-hidden="true">
+          <circle cx="10.2" cy="11" r="9.2" fill="#2b2b2b"/>
+          <path d="M5.6 9.2L6.4 5.2l2.9 2.9z M14.8 9.2L14 5.2l-2.9 2.9z" fill="#f4f4f4"/>
+          <ellipse cx="10.2" cy="12.1" rx="4.15" ry="3.7" fill="#f4f4f4"/>
+          <circle cx="8.7" cy="11.6" r="0.7" fill="#1a1a1a"/>
+          <circle cx="11.7" cy="11.6" r="0.7" fill="#1a1a1a"/>
+          <circle cx="20.2" cy="11" r="9.2" fill="#ffffff" stroke="#000" stroke-width="0.8"/>
+          <circle cx="17.4" cy="9.6" r="1.7" fill="#111"/>
+          <circle cx="23" cy="9.6" r="1.7" fill="#111"/>
+          <ellipse cx="20.2" cy="12.4" rx="0.9" ry="0.6" fill="#111"/>
+          <path d="M17.6 14.4q2.6 2.2 5.2 0" stroke="#111" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+          <circle cx="30.2" cy="11" r="9.2" fill="#f26b1d" stroke="#000" stroke-width="0.8"/>
+          <text x="30.2" y="15.1" font-family="Inter, system-ui, sans-serif" font-weight="700" font-size="12.5" text-anchor="middle" fill="#fff">e</text>
+        </svg>
+        <span>Feito para o público da FENECAN</span>
+      </div>
+    </footer>
+  </div>
+</div>
+
+<!-- ======================= Continuous site ======================= -->
+
+<div class="marquee" aria-hidden="true">
+  <div class="marquee-track">
+    <span class="marquee-item"><i></i>Processador</span>
+    <span class="marquee-item"><i></i>Placa-mãe</span>
+    <span class="marquee-item"><i></i>Memória <em>RAM</em></span>
+    <span class="marquee-item"><i></i>Placa de vídeo</span>
+    <span class="marquee-item"><i></i>SSD NVMe</span>
+    <span class="marquee-item"><i></i>Fonte</span>
+    <span class="marquee-item"><i></i>Cooler</span>
+    <span class="marquee-item"><i></i>Gabinete</span>
+    <span class="marquee-item"><i></i>Pasta térmica</span>
+    <span class="marquee-item"><i></i>Cabos</span>
+    <span class="marquee-item"><i></i>Processador</span>
+    <span class="marquee-item"><i></i>Placa-mãe</span>
+    <span class="marquee-item"><i></i>Memória <em>RAM</em></span>
+    <span class="marquee-item"><i></i>Placa de vídeo</span>
+    <span class="marquee-item"><i></i>SSD NVMe</span>
+    <span class="marquee-item"><i></i>Fonte</span>
+    <span class="marquee-item"><i></i>Cooler</span>
+    <span class="marquee-item"><i></i>Gabinete</span>
+    <span class="marquee-item"><i></i>Pasta térmica</span>
+    <span class="marquee-item"><i></i>Cabos</span>
+  </div>
+</div>
+
+<section class="section" id="benefits">
+  <div class="glow" style="left:-20vmax; top:0" aria-hidden="true"></div>
+  <div class="section-head">
+    <span class="badge reveal reveal--scale">Por que usar</span>
+    <h2>
+      <span class="reveal-mask" style="display:block"><span>Aprender hardware</span></span>
+      <span class="reveal-mask" style="display:block; --i:1"><span>ficou <em>tangível.</em></span></span>
+    </h2>
+    <p class="reveal" style="--i:2">Toda a experiência de montar um computador de verdade, sem chave de fenda, sem risco e com feedback a cada encaixe.</p>
+  </div>
+
+  <div class="benefits-grid">
+    <article class="card reveal" style="--i:0">
+      <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></svg></div>
+      <h3>Aprender fazendo</h3>
+      <p>Cada peça é manipulada em 3D: gire, aproxime e encaixe no lugar certo.</p>
+    </article>
+    <article class="card reveal" style="--i:1">
+      <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg></div>
+      <h3>Zero risco</h3>
+      <p>Erre à vontade: nenhuma peça queima, entorta ou se perde no processo.</p>
+    </article>
+    <article class="card reveal" style="--i:2">
+      <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+      <h3>Feedback imediato</h3>
+      <p>O simulador mostra o que é compatível e por que, no momento do encaixe.</p>
+    </article>
+    <article class="card reveal" style="--i:3">
+      <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10l8-6 8 6v10"/><path d="M9 20v-6h6v6"/></svg></div>
+      <h3>Feito para a feira</h3>
+      <p>Sessões rápidas e visuais, pensadas para quem passa pelo estande na FENECAN.</p>
+    </article>
+  </div>
+</section>
+
+<section class="section" id="how-it-works">
+  <div class="glow" style="right:-25vmax; top:10%" aria-hidden="true"></div>
+  <div class="section-head">
+    <span class="badge reveal reveal--scale">Como funciona</span>
+    <h2>
+      <span class="reveal-mask" style="display:block"><span>Quatro etapas do</span></span>
+      <span class="reveal-mask" style="display:block; --i:1"><span>gabinete vazio ao <em>primeiro boot.</em></span></span>
+    </h2>
+  </div>
+
+  <div class="steps">
+    <article class="step reveal" style="--i:0">
+      <div>
+        <div class="step-num">01</div>
+        <h3>Escolha o gabinete e a placa-mãe</h3>
+        <p>Comece pela base: posicione a placa-mãe no gabinete e conheça cada slot, soquete e conector.</p>
+        <div class="step-tags"><span class="tag">Gabinete</span><span class="tag">Placa-mãe</span></div>
+      </div>
+      <div class="scene" aria-hidden="true">
+        <div class="board">
+          <div class="slot" style="--x:8%;--y:8%;--w:84%;--h:84%"></div>
+          <div class="part part--dark" style="--x:8%;--y:8%;--w:84%;--h:84%"></div>
+        </div>
+        <span class="led"></span>
+      </div>
+    </article>
+
+    <article class="step reveal" style="--i:1">
+      <div>
+        <div class="step-num">02</div>
+        <h3>Encaixe processador e memória</h3>
+        <p>Alinhe o processador no soquete, aplique a pasta térmica, instale o cooler e os pentes de RAM.</p>
+        <div class="step-tags"><span class="tag">CPU</span><span class="tag">Cooler</span><span class="tag">RAM</span></div>
+      </div>
+      <div class="scene" aria-hidden="true">
+        <div class="board">
+          <div class="slot" style="--x:18%;--y:22%;--w:26%;--h:34%"></div>
+          <div class="slot" style="--x:58%;--y:14%;--w:6%;--h:56%"></div>
+          <div class="part" style="--x:18%;--y:22%;--w:26%;--h:34%"></div>
+          <div class="part" style="--x:58%;--y:14%;--w:6%;--h:56%"></div>
+        </div>
+        <span class="led"></span>
+      </div>
+    </article>
+
+    <article class="step reveal" style="--i:2">
+      <div>
+        <div class="step-num">03</div>
+        <h3>Instale vídeo, armazenamento e fonte</h3>
+        <p>Conecte a placa de vídeo no slot PCIe, o SSD e a fonte — e organize os cabos.</p>
+        <div class="step-tags"><span class="tag">GPU</span><span class="tag">SSD</span><span class="tag">Fonte</span></div>
+      </div>
+      <div class="scene" aria-hidden="true">
+        <div class="board">
+          <div class="slot" style="--x:10%;--y:62%;--w:70%;--h:14%"></div>
+          <div class="slot" style="--x:70%;--y:20%;--w:18%;--h:10%"></div>
+          <div class="part" style="--x:10%;--y:62%;--w:70%;--h:14%"></div>
+          <div class="part" style="--x:70%;--y:20%;--w:18%;--h:10%"></div>
+        </div>
+        <span class="led"></span>
+      </div>
+    </article>
+
+    <article class="step reveal" style="--i:3">
+      <div>
+        <div class="step-num">04</div>
+        <h3>Ligue e veja funcionar</h3>
+        <p>Aperte o botão de energia: se tudo estiver certo, o PC dá o primeiro boot na sua frente.</p>
+        <div class="step-tags"><span class="tag">Energia</span><span class="tag">Primeiro boot</span></div>
+      </div>
+      <div class="scene" aria-hidden="true">
+        <div class="board">
+          <div class="slot" style="--x:8%;--y:8%;--w:84%;--h:84%"></div>
+          <div class="part part--dark" style="--x:8%;--y:8%;--w:84%;--h:84%"></div>
+          <div class="part" style="--x:18%;--y:22%;--w:26%;--h:34%"></div>
+        </div>
+        <span class="led"></span>
+      </div>
+    </article>
+  </div>
+</section>
+
+<section class="section" id="pecas">
+  <div class="glow" style="left:-15vmax; top:20%" aria-hidden="true"></div>
+  <div class="section-head">
+    <span class="badge reveal reveal--scale">Peças</span>
+    <h2>
+      <span class="reveal-mask" style="display:block"><span>Cada componente,</span></span>
+      <span class="reveal-mask" style="display:block; --i:1"><span>em <em>detalhe.</em></span></span>
+    </h2>
+    <p class="reveal" style="--i:2">Conheça a função de cada peça antes de encaixá-la no lugar.</p>
+  </div>
+
+  <div class="parts-grid">
+    <article class="part-card reveal" style="--i:0">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="6" y="6" width="12" height="12" rx="1.5"/><rect x="9" y="9" width="6" height="6" rx="0.5"/><path d="M9 3v3M12 3v3M15 3v3M9 18v3M12 18v3M15 18v3M3 9h3M3 12h3M3 15h3M18 9h3M18 12h3M18 15h3"/></svg>
+      <h3>Processador</h3><p>O cérebro do computador: executa as instruções de tudo o que roda.</p>
+    </article>
+    <article class="part-card reveal" style="--i:1">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><rect x="6" y="6" width="5" height="5"/><path d="M14 6h4M14 9h4M6 14h12M6 17h8"/></svg>
+      <h3>Placa-mãe</h3><p>Conecta todas as peças e define o que é compatível com o quê.</p>
+    </article>
+    <article class="part-card reveal" style="--i:2">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="2" y="7" width="20" height="9" rx="1"/><path d="M5 10h2v3H5zM9 10h2v3H9zM13 10h2v3h-2zM17 10h2v3h-2zM4 16v2M8 16v2M12 16v2M16 16v2M20 16v2"/></svg>
+      <h3>Memória RAM</h3><p>Guarda os dados em uso para que o processador acesse rápido.</p>
+    </article>
+    <article class="part-card reveal" style="--i:3">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="2" y="6" width="20" height="11" rx="1.5"/><circle cx="8" cy="11.5" r="3"/><circle cx="16" cy="11.5" r="3"/><path d="M4 17v2h8v-2"/></svg>
+      <h3>Placa de vídeo</h3><p>Processa gráficos e imagens: essencial para jogos e 3D.</p>
+    </article>
+    <article class="part-card reveal" style="--i:0">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="2" y="8" width="20" height="8" rx="1.5"/><path d="M6 12h6M16 11v2M19 11v2"/></svg>
+      <h3>Armazenamento</h3><p>SSD ou HD: onde ficam o sistema operacional e os seus arquivos.</p>
+    </article>
+    <article class="part-card reveal" style="--i:1">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="1.5"/><path d="M13 8l-3 4h4l-3 4"/></svg>
+      <h3>Fonte</h3><p>Converte e distribui a energia com segurança para cada componente.</p>
+    </article>
+    <article class="part-card reveal" style="--i:2">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="1.5"/><path d="M12 10.5C12 6 15 5 16 7M13.5 12c4.5 0 5.5 3 3.5 4M12 13.5c0 4.5-3 5.5-4 3.5M10.5 12C6 12 5 9 7 8"/></svg>
+      <h3>Cooler</h3><p>Mantém a temperatura sob controle para o processador não travar.</p>
+    </article>
+    <article class="part-card reveal" style="--i:3">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="6" y="2" width="12" height="20" rx="1.5"/><circle cx="12" cy="6" r="1"/><path d="M9 11h6M9 14h6M9 17h6"/></svg>
+      <h3>Gabinete</h3><p>A estrutura que abriga, protege e ventila todo o conjunto.</p>
+    </article>
+  </div>
+</section>
+
+<section class="section" id="faqs">
+  <div class="section-head">
+    <span class="badge reveal reveal--scale">FAQ</span>
+    <h2>
+      <span class="reveal-mask" style="display:block"><span>Perguntas <em>frequentes.</em></span></span>
+    </h2>
+  </div>
+
+  <div class="faq-list">
+    <details class="faq reveal" style="--i:0">
+      <summary>Preciso saber montar computador para usar?<span class="plus" aria-hidden="true"></span></summary>
+      <p>Não. O simulador foi pensado para iniciantes: cada etapa é guiada e explica a função da peça que você está encaixando.</p>
+    </details>
+    <details class="faq reveal" style="--i:1">
+      <summary>O que acontece se eu encaixar algo errado?<span class="plus" aria-hidden="true"></span></summary>
+      <p>Nada quebra. O simulador indica o problema e mostra como corrigir, para que o erro vire aprendizado.</p>
+    </details>
+    <details class="faq reveal" style="--i:2">
+      <summary>Quanto tempo leva uma montagem completa?<span class="plus" aria-hidden="true"></span></summary>
+      <p>Poucos minutos. A experiência foi desenhada para sessões rápidas durante a visita ao estande.</p>
+    </details>
+    <details class="faq reveal" style="--i:3">
+      <summary>Onde posso experimentar?<span class="plus" aria-hidden="true"></span></summary>
+      <p>No estande do projeto durante a FENECAN. Procure a equipe para começar a sua montagem.</p>
+    </details>
+  </div>
+</section>
+
+<section class="section cta" id="start">
+  <div class="glow" style="left:50%; top:10%; margin-left:-30vmax" aria-hidden="true"></div>
+  <span class="badge reveal reveal--scale" id="demo">
+    <svg class="badge-star" viewBox="0 0 24 24" fill="#fff" aria-hidden="true" style="animation:none"><path d="M12 2.6C12.55 2.6 12.88 3.15 13.08 4.7c.62 4.7 1.52 5.6 6.22 6.22 1.55.2 2.1.53 2.1 1.08s-.55.88-2.1 1.08c-4.7.62-5.6 1.52-6.22 6.22-.2 1.55-.53 2.1-1.08 2.1s-.88-.55-1.08-2.1c-.62-4.7-1.52-5.6-6.22-6.22C3.15 12.88 2.6 12.55 2.6 12s.55-.88 2.1-1.08c4.7-.62 5.6-1.52 6.22-6.22C11.12 3.15 11.45 2.6 12 2.6Z"/></svg>
+    FENECAN
+  </span>
+  <h2 style="margin-top:22px">
+    <span class="reveal-mask" style="display:block"><span>Venha montar o seu</span></span>
+    <span class="reveal-mask" style="display:block; --i:1"><span class="shimmer">no nosso estande.</span></span>
+  </h2>
+  <p class="lede reveal" style="--i:2">Pegue as peças, encaixe cada uma e aperte o botão de ligar. O resto a gente mostra ao vivo.</p>
+  <div class="cta-actions reveal" style="--i:3">
+    <a class="btn btn-solid" href="#how-it-works">Ver as etapas</a>
+    <a class="btn btn-ghost" href="#top">Voltar ao topo</a>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <a class="logo" href="#top" aria-label="Monta.3D">
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g transform="rotate(-30 12 12)"><circle cx="7.3" cy="3.2" r="1.45"/><rect x="5.5" y="4.7" width="3.6" height="14.6" rx="1.8"/><rect x="14.9" y="4.7" width="3.6" height="14.6" rx="1.8"/><circle cx="16.7" cy="20.8" r="1.45"/></g></svg>
+    <span>Monta<span class="logo-suffix">.3D</span></span>
+  </a>
+  <span>Simulador 3D de montagem de computadores · Projeto para a FENECAN</span>
+</footer>
+
+<script>
+(function () {
+  var doc = document.documentElement;
+  var body = document.body;
+  doc.classList.add("js");
+
+  /* 1. Entrance: each element settles into .is-in on its own animationend */
+  var appear = Array.prototype.slice.call(document.querySelectorAll(".appear, .hero-photo"));
+  appear.forEach(function (el) {
+    el.addEventListener("animationend", function (e) {
+      if (e.target === el) el.classList.add("is-in");
+    }, { once: true });
+  });
+
+  /* 2. Fallback: if animations are not running after two frames, show everything */
+  requestAnimationFrame(function () {
+    requestAnimationFrame(function () {
+      var probe = document.querySelector(".appear");
+      var ok = false;
+      if (probe && typeof probe.getAnimations === "function") {
+        ok = probe.getAnimations().some(function (a) {
+          return a.playState === "running" || a.playState === "finished";
+        });
+      }
+      if (!ok) appear.forEach(function (el) { el.classList.add("is-in"); });
+    });
+  });
+
+  /* 3–5. Menu */
+  var burger = document.querySelector(".burger");
+  var nav = document.getElementById("site-nav");
+  var backdrop = document.querySelector(".menu-backdrop");
+  function setMenu(open) {
+    body.classList.toggle("menu-open", open);
+    burger.setAttribute("aria-expanded", open ? "true" : "false");
+    burger.setAttribute("aria-label", open ? "Fechar menu" : "Abrir menu");
+  }
+  burger.addEventListener("click", function () { setMenu(!body.classList.contains("menu-open")); });
+  nav.querySelectorAll("a").forEach(function (a) { a.addEventListener("click", function () { setMenu(false); }); });
+  backdrop.addEventListener("click", function () { setMenu(false); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") setMenu(false); });
+  var desktop = window.matchMedia("(min-width: 901px)");
+  var onDesktop = function (mq) { if (mq.matches) setMenu(false); };
+  if (desktop.addEventListener) desktop.addEventListener("change", onDesktop);
+  else if (desktop.addListener) desktop.addListener(onDesktop);
+
+  /* Scroll reveal */
+  var revealEls = document.querySelectorAll(".reveal, .reveal-mask");
+  if ("IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("is-visible");
+          io.unobserve(entry.target);
+        }
+      });
+    }, { rootMargin: "0px 0px -12% 0px", threshold: 0.12 });
+    revealEls.forEach(function (el) { io.observe(el); });
+  } else {
+    revealEls.forEach(function (el) { el.classList.add("is-visible"); });
+  }
+
+  /* Scroll progress bar */
+  var bar = document.querySelector(".progress");
+  var ticking = false;
+  function updateProgress() {
+    var max = doc.scrollHeight - window.innerHeight;
+    var p = max > 0 ? window.scrollY / max : 0;
+    bar.style.transform = "scaleX(" + Math.min(1, Math.max(0, p)) + ")";
+    ticking = false;
+  }
+  window.addEventListener("scroll", function () {
+    if (!ticking) { ticking = true; requestAnimationFrame(updateProgress); }
+  }, { passive: true });
+  updateProgress();
+
+  /* Cursor-following light on benefit cards */
+  document.querySelectorAll(".card").forEach(function (card) {
+    card.addEventListener("pointermove", function (e) {
+      var r = card.getBoundingClientRect();
+      card.style.setProperty("--mx", (e.clientX - r.left) + "px");
+      card.style.setProperty("--my", (e.clientY - r.top) + "px");
+    });
+  });
+})();
+</script>
+</body>
+</html>

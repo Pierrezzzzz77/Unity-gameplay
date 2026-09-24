@@ -1123,7 +1123,7 @@ h1 em, h2 em {
 
 <div class="hero-stage">
   <div class="hero-photo" aria-hidden="true">
-    <video autoplay muted loop playsinline preload="auto"
+    <video autoplay muted loop playsinline webkit-playsinline disablepictureinpicture preload="auto"
       src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260818_072341_50851634-bbc3-4c33-9acc-7647d4db44aa.mp4"></video>
   </div>
 
@@ -1550,6 +1550,26 @@ h1 em, h2 em {
     if (!ticking) { ticking = true; requestAnimationFrame(updateProgress); }
   }, { passive: true });
   updateProgress();
+
+  /* Mobile: some phones (e.g. iOS Low Power Mode) block autoplay — retry on first interaction */
+  var video = document.querySelector(".hero-photo video");
+  if (video) {
+    video.muted = true;
+    var tryPlay = function () {
+      var r = video.play();
+      if (r && r.catch) r.catch(function () {});
+    };
+    tryPlay();
+    ["touchstart", "pointerdown", "scroll", "keydown"].forEach(function (ev) {
+      window.addEventListener(ev, function once() {
+        if (video.paused) tryPlay();
+        window.removeEventListener(ev, once);
+      }, { passive: true });
+    });
+    document.addEventListener("visibilitychange", function () {
+      if (!document.hidden && video.paused) tryPlay();
+    });
+  }
 
   /* Cursor-following light on benefit cards */
   document.querySelectorAll(".card").forEach(function (card) {

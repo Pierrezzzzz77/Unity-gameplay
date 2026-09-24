@@ -127,7 +127,10 @@ button { font-family: inherit; }
   inset: 0;
   z-index: 0;
   overflow: hidden;
-  background: #000;
+  background:
+    radial-gradient(60% 50% at 50% 38%, rgba(170, 195, 255, 0.10), transparent 70%),
+    radial-gradient(40% 35% at 20% 80%, rgba(255, 255, 255, 0.05), transparent 70%),
+    #000;
   animation: in-photo 1.6s var(--ease) 0s both;
 }
 .hero-photo video {

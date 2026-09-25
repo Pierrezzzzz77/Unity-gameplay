@@ -16,8 +16,8 @@ Requer Node.js 20.19+ (ou 22.12+).
 ```bash
 npm install
 npm run dev        # servidor de desenvolvimento: abra http://localhost:5173/montar/
-npm run build      # checagem de tipos + build de produção em dist/
-npm run preview    # serve o build de dist/ localmente
+npm run build      # checagem de tipos + build de produção em docs/
+npm run preview    # serve o build de docs/ localmente
 ```
 
 Outros scripts:
@@ -29,10 +29,20 @@ Outros scripts:
 | `npm run format`       | Prettier em todo o projeto                 |
 | `npm run format:check` | Verifica a formatação sem alterar arquivos |
 
-### Deploy
+### Deploy (GitHub Pages)
 
-O build usa caminhos relativos (`base: './'`), então a pasta `dist/` funciona tal como está
-em Vercel, Netlify ou GitHub Pages (inclusive numa subpasta como `usuario.github.io/repo/`).
+O build vai para a pasta **`docs/`**, que já fica versionada no repositório com o site pronto
+(landing em `docs/index.html`, simulador em `docs/montar/`). Para publicar:
+
+1. No GitHub, abra **Settings → Pages**.
+2. Em **Build and deployment**, escolha **Deploy from a branch**, selecione a branch e a pasta
+   **`/docs`** e salve.
+3. Em alguns minutos o site fica em `https://<usuario>.github.io/<repositorio>/`
+   (o simulador em `.../montar/`).
+
+Depois de mudar o código, rode `npm run build` e faça commit da pasta `docs/` de novo.
+Como o build usa caminhos relativos (`base: './'`), a mesma pasta também funciona em Vercel
+ou Netlify (diretório de publicação: `docs`).
 
 ## Como usar
 

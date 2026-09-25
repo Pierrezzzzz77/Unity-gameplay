@@ -11,6 +11,9 @@ export default defineConfig({
   base: './',
   plugins: [react(), tailwindcss()],
   build: {
+    // Saída em docs/: o GitHub Pages publica direto dessa pasta.
+    outDir: 'docs',
+    emptyOutDir: true,
     // O three.js sozinho tem ~740 kB minificado; os demais chunks ficam bem abaixo disso.
     chunkSizeWarningLimit: 800,
     rolldownOptions: {

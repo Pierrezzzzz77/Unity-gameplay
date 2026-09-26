@@ -1,0 +1,46 @@
+[
+  {
+    "id": "cpu",
+    "title": "Processador",
+    "hint": "O cérebro da máquina — defina o modelo",
+    "summaryLabel": "Processador",
+    "options": [
+      { "id": "ryzen-5-5600", "label": "Ryzen 5 5600", "name": "Ryzen 5 5600", "meta": "6 núcleos · 12 threads · AM4" },
+      { "id": "ryzen-7-5700x", "label": "Ryzen 7 5700X", "name": "Ryzen 7 5700X", "meta": "8 núcleos · 16 threads · AM4" },
+      { "id": "i5-12400f", "label": "Core i5-12400F", "name": "Intel Core i5-12400F", "meta": "6 núcleos · 12 threads · LGA 1700" }
+    ]
+  },
+  {
+    "id": "gpu",
+    "title": "Placa de vídeo",
+    "hint": "Escolha a GPU da sua build",
+    "summaryLabel": "Placa de vídeo",
+    "options": [
+      { "id": "rtx-4060", "label": "RTX 4060", "name": "GeForce RTX 4060", "meta": "8 GB GDDR6" },
+      { "id": "rtx-4070", "label": "RTX 4070", "name": "GeForce RTX 4070", "meta": "12 GB GDDR6X" },
+      { "id": "rx-7600", "label": "RX 7600", "name": "Radeon RX 7600", "meta": "8 GB GDDR6" }
+    ]
+  },
+  {
+    "id": "ram",
+    "title": "Memória RAM",
+    "hint": "Capacidade de memória da máquina",
+    "summaryLabel": "Memória RAM",
+    "options": [
+      { "id": "ram-16-ddr4", "label": "16 GB DDR4 (2×8)", "name": "16 GB — 2× 8 GB", "meta": "DDR4 · 3200 MHz" },
+      { "id": "ram-32-ddr4", "label": "32 GB DDR4 (2×16)", "name": "32 GB — 2× 16 GB", "meta": "DDR4 · 3200 MHz" },
+      { "id": "ram-32-ddr5", "label": "32 GB DDR5 (2×16)", "name": "32 GB — 2× 16 GB", "meta": "DDR5 · 5200 MHz" }
+    ]
+  },
+  {
+    "id": "ssd",
+    "title": "Armazenamento",
+    "hint": "SSD NVMe — espaço para o sistema e jogos",
+    "summaryLabel": "Armazenamento",
+    "options": [
+      { "id": "ssd-512", "label": "512 GB NVMe", "name": "512 GB", "meta": "NVMe · leitura até 3.500 MB/s" },
+      { "id": "ssd-1tb", "label": "1 TB NVMe", "name": "1 TB", "meta": "NVMe · leitura até 5.000 MB/s" },
+      { "id": "ssd-2tb", "label": "2 TB NVMe", "name": "2 TB", "meta": "NVMe · leitura até 5.000 MB/s" }
+    ]
+  }
+]

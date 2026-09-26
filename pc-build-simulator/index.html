@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#1E4620">
+  <meta name="color-scheme" content="light">
+  <meta name="description" content="PC Build Simulator — projeto acadêmico da Faculdade Serra Dourada (Canaã dos Carajás/PA). Monte seu PC e acompanhe a montagem em tempo real.">
+  <link rel="icon" type="image/svg+xml" href="/logo.svg">
+  <title>PC Build Simulator · Faculdade Serra Dourada</title>
+  <script type="module" src="/src/main.ts"></script>
+</head>
+<body>
+
+  <!-- ============================================================
+       MAPA DAS TELAS — todas no mesmo documento; a visível tem .active
+       ------------------------------------------------------------
+       #screen-home        → Tela inicial
+       #screen-components  → Escolha de componentes (catálogo vindo do
+                             backend Tauri: comando get_catalog)
+       #screen-status      → Fila / posição (comando build_status)
+       #screen-montage     → Montagem em andamento (comando build_status)
+
+       Navegação: links #screen-X → src/router.ts (showScreen).
+       ============================================================ -->
+
+  <!-- Cabeçalho fixo — identidade Serra Dourada -->
+  <header class="topbar">
+    <div class="topbar__brand">
+      <img class="logo" src="/logo.svg" alt="Faculdade Serra Dourada">
+      <div class="topbar__text">
+        <span class="topbar__name">Serra Dourada</span>
+        <span class="topbar__sub">PC Build Simulator</span>
+      </div>
+    </div>
+    <span class="live"><span class="live__dot" aria-hidden="true"></span>Ao vivo</span>
+  </header>
+
+  <main class="app">
+
+    <!-- ============================================================
+         TELA 1 — INÍCIO
+         ============================================================ -->
+    <section class="screen active" id="screen-home">
+      <div class="home__inner">
+
+        <div class="hero">
+          <img class="logo logo--hero" src="/logo.svg" alt="Faculdade Serra Dourada">
+
+          <p class="eyebrow">Faculdade Serra Dourada · Canaã dos Carajás — PA</p>
+
+          <h1 class="hero__title">
+            <span>PC Build</span>
+            <span class="hero__title-accent">Simulator</span>
+          </h1>
+
+          <p class="hero__subtitle">Monte sua máquina do zero, envie para a fila e acompanhe a montagem em tempo real.</p>
+
+          <ul class="feature-chips">
+            <li id="chip-categories">4 categorias de peças</li>
+            <li>Fila ao vivo</li>
+            <li>Acompanhamento em tempo real</li>
+          </ul>
+
+          <a href="#screen-components" class="btn btn--primary btn--block">
+            Começar
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M5 12h14M13 6l6 6-6 6"/>
+            </svg>
+          </a>
+        </div>
+
+        <footer class="site-footer">
+          Projeto acadêmico · PC Build Simulator<br>
+          Faculdade Serra Dourada — Canaã dos Carajás/PA · 2026
+        </footer>
+      </div>
+
+      <!-- Silhueta de serra decorativa (baixa opacidade, fundo da tela) -->
+      <svg class="home__ridge" viewBox="0 0 400 96" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0 96 L70 40 L128 88 L196 16 L270 90 L330 48 L400 96 Z" fill="#1E4620" opacity="0.05"/>
+        <path d="M0 96 L120 56 L220 96 Z" fill="#2F6B33" opacity="0.05"/>
+      </svg>
+    </section>
+
+    <!-- ============================================================
+         TELA 2 — COMPONENTES
+         Os cards são gerados por src/ui/components.ts a partir do catálogo.
+         ============================================================ -->
+    <section class="screen" id="screen-components">
+
+      <div class="screen-head">
+        <p class="eyebrow">Configuração da build</p>
+        <h1>Escolha seus componentes</h1>
+        <!-- indicador de etapas: config → fila → montagem -->
+        <div class="stepper" aria-hidden="true">
+          <span class="stepper__bar is-on"></span>
+          <span class="stepper__bar"></span>
+          <span class="stepper__bar"></span>
+        </div>
+      </div>
+
+      <div class="card-list" id="catalog" aria-busy="true"></div>
+
+      <!-- Barra de ação fixa no rodapé (continua visível ao rolar) -->
+      <footer class="actionbar">
+        <p class="actionbar__note">
+          Você selecionou <b id="parts-count">0/0</b> categorias
+        </p>
+        <p class="actionbar__note is-error" id="submit-error" role="alert" hidden></p>
+        <button type="button" class="btn btn--primary btn--block" id="btn-submit" disabled>
+          Continuar
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M5 12h14M13 6l6 6-6 6"/>
+          </svg>
+        </button>
+      </footer>
+    </section>
+
+    <!-- ============================================================
+         TELA 3 — STATUS / FILA
+         Preenchida por src/ui/tracking.ts a cada consulta ao backend.
+         ============================================================ -->
+    <section class="screen" id="screen-status">
+
+      <a href="#screen-components" class="back-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M14.5 5L8 12l6.5 7"/>
+        </svg>
+        Voltar
+      </a>
+
+      <div class="status-hero">
+        <span class="check-badge" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9.5"/>
+            <path d="M8.2 12.4l2.7 2.7 5-5.2"/>
+          </svg>
+        </span>
+
+        <p class="build-number">
+          <span class="build-number__tag">Build</span>
+          <span class="build-number__num" id="build-number">#000</span>
+        </p>
+
+        <p class="status-ok">Configuração recebida</p>
+        <p class="status-sub">Seus componentes foram validados e entraram na fila de montagem.</p>
+      </div>
+
+      <div class="queue-card" aria-live="polite">
+        <p class="queue-card__label">Sua posição na fila</p>
+        <p class="queue-card__count">
+          <span class="queue-card__pos" id="queue-position">00</span>
+          <span class="queue-card__of">de <b id="queue-total">0</b> builds na fila</span>
+        </p>
+        <p class="queue-card__eta">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"/>
+            <path d="M12 7v5l3.5 2.2"/>
+          </svg>
+          <span id="queue-eta-label">Previsão de início:</span> <b id="queue-eta">—</b>
+        </p>
+      </div>
+
+      <!-- Resumo do pedido (preenchido a partir da build enviada) -->
+      <div class="summary">
+        <p class="summary__title">Resumo da build</p>
+        <div id="summary-rows"></div>
+      </div>
+
+      <p class="waiting" id="waiting">
+        <span id="waiting-text">Aguarde sua vez</span>
+        <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+      </p>
+
+      <!-- Liberado quando a posição na fila chega em 0 -->
+      <a href="#screen-montage" class="btn btn--ghost btn--block actionbar-extra is-disabled" id="btn-montage" aria-disabled="true">Acompanhar a montagem</a>
+    </section>
+
+    <!-- ============================================================
+         TELA 4 — MONTAGEM
+         Barra de progresso controlada via style.width (0 → 100%).
+         ============================================================ -->
+    <section class="screen" id="screen-montage">
+
+      <a href="#screen-status" class="back-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M14.5 5L8 12l6.5 7"/>
+        </svg>
+        Voltar
+      </a>
+
+      <div class="mount-hero">
+        <p class="eyebrow" id="mount-eyebrow">Montagem em andamento</p>
+
+        <p class="build-number">
+          <span class="build-number__tag">Build</span>
+          <span class="build-number__num" id="mount-build-number">#000</span>
+        </p>
+
+        <h1 class="mount-title" id="mount-title">Sua build está <span class="accent">sendo montada!</span></h1>
+        <p class="status-sub">Cada etapa é conferida e registrada em tempo real.</p>
+      </div>
+
+      <div class="progress" id="build-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Progresso da montagem">
+        <div class="progress__fill" id="build-progress-fill"></div>
+      </div>
+      <div class="progress__labels">
+        <span class="progress__stage" id="mount-stage">Preparando bancada</span>
+        <span class="progress__eta" id="mount-eta">—</span>
+      </div>
+
+      <!-- Checklist de etapas — gerado em src/ui/tracking.ts (.is-done / .is-now) -->
+      <ol class="checklist" id="checklist"></ol>
+
+      <p class="mount-note" id="mount-note">Não feche esta tela — você será avisado assim que a build for concluída.</p>
+
+      <a href="#screen-components" class="btn btn--primary btn--block actionbar-extra" id="btn-new-build" hidden>Montar outra build</a>
+    </section>
+
+  </main>
+</body>
+</html>
